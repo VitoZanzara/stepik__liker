@@ -15,18 +15,26 @@ class Like:
         self.like_info = like.find_element(By.CLASS_NAME, 'notification__title-action').text
         self.user_name = like_from.text     # имя лайкнувшего
         *_, self.user_id, _ = like_from.get_attribute('href').split('/')   # stepik-id лайкнувшего
-        _, what_was_liked = like.find_element(By.CLASS_NAME, 'notification__context-content').find_elements(By.TAG_NAME, 'a')
-        self.what_was_liked_name = what_was_liked.text
-        self.what_was_liked_url = what_was_liked.get_attribute('href')
+        # обработка отозванного лайка
+        self.what_was_liked_name = None
+        self.what_was_liked_lesson_name = None
+        self.what_was_liked_url = None
+        data = like.find_element(By.CLASS_NAME, 'notification__context-content').find_elements(By.TAG_NAME, 'a')
+        if len(data) > 1:
+            what_was_liked_lesson, what_was_liked = data
+            self.what_was_liked_lesson_name = what_was_liked_lesson.text
+            self.what_was_liked_name = what_was_liked.text
+            self.what_was_liked_url = what_was_liked.get_attribute('href')
+
         self.__mark_read_btn = like.find_element(By.CLASS_NAME, 'notification__icon-action')
 
 
     def mark_read(self) -> None:
         """
         Если лайк, а не коммент (который надо бы прочитать самому) -
-        смело помечаем прочитанным
+        смело помечаем прочитанным. Если лайкнули, а потом лайк отозвали - тоже помечаем
         """
-        if not self.is_comment:
+        if not self.is_comment or self.what_was_liked_name is None:
             try:
                 self.__mark_read_btn.click()
             except Exception as e:
@@ -56,6 +64,7 @@ class Like:
     def __str__(self):
         like_name = f'liker_name: {self.user_name}'
         liker_id = f'liker_id: {self.user_id}'
+        what_was_liked_lesson_name = f'what_was_liked_lesson: {self.what_was_liked_name}'
         what_was_liked_name = f'what_was_liked_name: {self.what_was_liked_name}'
         what_was_liked_url = f'what_was_liked_url: {self.what_was_liked_url}'
         comment_or_like = f'comment_or_like: {"comment" if self.is_comment else "like"}'
@@ -63,9 +72,9 @@ class Like:
         return (f'{on_work}, {comment_or_like}\n'
                 f'{like_name}, {liker_id}\n'
                 f'{self.like_info}\n'
-                f'{what_was_liked_name}\n'
+                f'{what_was_liked_lesson_name} - {what_was_liked_name}\n'
                 f'{what_was_liked_url}')
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.get_info()})'
+        return f'{self.__class__.__name__}({self.user_id}, {self.user_name})'
 
