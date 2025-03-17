@@ -30,7 +30,7 @@ class Statistics:
     def dump_data(self):
         """Сохранение файла статистики"""
         with open(self.stat_file_name, 'w', encoding='utf-8') as f:
-            logger.info(f'stat data was saved')
+            logger.debug(f'stat data was saved')
             json.dump(self.stat_data, f, ensure_ascii=False, indent=4)
 
     def set_stat(self, item: Solution | Like):
