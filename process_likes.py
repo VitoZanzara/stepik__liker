@@ -6,6 +6,7 @@ from scroll_down import scroll_down
 from class_like import Like
 from class_statistics import Statistics
 
+
 from selenium.common import NoSuchElementException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -54,9 +55,10 @@ def process_likes(browser: MyBrowser):
             val = likes_data[solution_url]
             val['ids_list'].append(liker_id)
             val['likes_list'].append(like)
-            stat.set_stat(like)        # статистика
         else:
+            browser.execute_script("arguments[0].scrollIntoView(true);", raw_like)
             like.mark_read()    # если не подходит для обработки - помечаем прочитанным
+        stat.set_stat(like)  # статистика
     stat.dump_data()
     return likes_data
 
@@ -65,5 +67,8 @@ if __name__ == '__main__':
     browser = MyBrowser()
     likes_data = process_likes(browser)
     print(f'len = {len(likes_data)}')
-
+    for solution_url, likes in likes_data.items():
+        print(f'solution_url: {solution_url}')
+        print(f'likes: {likes}')
+        print('-' * 20)
 
