@@ -1,5 +1,3 @@
-from selenium.common import TimeoutException
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
 from time import sleep
@@ -34,19 +32,23 @@ def process_solution(browser: MyBrowser, solution_url: str, ids_list: list[str]|
 
     browser.execute_script(f'window.open("{solution_url}", "_blank1");')     # open url in new tab
     browser.switch_to.window(browser.window_handles[-1])                     # switch to new tab
-    try:
-        _ = browser.waiter.until(EC.presence_of_element_located((By.CLASS_NAME, "tab__item-counter")))
-    except TimeoutException:
-        _ = browser.waiter.until(EC.presence_of_element_located((By.CLASS_NAME, "tab__item-counter")))
-    sleep(random.uniform(6, 9))
+    sleep(random.uniform(7, 9))
 
-    comments_sols = browser.find_elements(By.CLASS_NAME, "tab__item-counter")
+    comments_sols = []
     n_sols = '0'
+    tries_to_get_n_solutions = 0
+    # получения количества решений на странице
+    while not comments_sols and tries_to_get_n_solutions < 10:
+        sleep(random.uniform(1, 3))
+        comments_sols = browser.find_elements(By.CLASS_NAME, "tab__item-counter")
+        tries_to_get_n_solutions += 1
+    logger.debug(f'comments & solutions: {len(comments_sols) = }, {tries_to_get_n_solutions = }')
     if len(comments_sols) == 2:
         comments, sols = comments_sols
         n_sols = sols.get_attribute('data-value')    # количество решений
     logger.debug(f'Общее количество решений: {n_sols}')
     scroll_down(browser, n_sols, logger)
+    sleep(random.uniform(1, 3))
 
     raw_solutions = browser.find_elements(By.CLASS_NAME, 'comment-widget')  # собираем все решения на странице
 
@@ -55,16 +57,16 @@ def process_solution(browser: MyBrowser, solution_url: str, ids_list: list[str]|
         if not i % 20:
             logger.debug(f'Обработка решения {i} из {len(raw_solutions)}')
         solution = Solution(raw_sol)
-        if solution.user_id == STEPIK_SELF_ID:   # если собственное решение - пропускаем
-            continue
-        elif solution.voted:                     # если уже лайкали - пропускаем
-            already_liked += 1
+        if solution.user_id == STEPIK_SELF_ID or solution.voted:   # если собственное или уже лайкали - пропускаем
+            already_liked += solution.voted
         elif solution.user_id in friends_data or solution.user_id in ids_list:
             liked += 1
             browser.execute_script("arguments[0].scrollIntoView(true);", solution.sol)
+            sleep(random.uniform(.5, 1))
             solution.like()
 
-        stat.set_stat(solution)     # Статистика
+            stat.set_stat(solution)     # Статистика
+            sleep(random.uniform(.5, 1))
 
     stat.dump_data()
 
@@ -77,6 +79,7 @@ def process_solution(browser: MyBrowser, solution_url: str, ids_list: list[str]|
 
     for like in likes_list:     # Помечаем лайки прочитанными
         browser.execute_script("arguments[0].scrollIntoView(true);", like.like)
+        sleep(random.uniform(.5, 1))
         like.mark_read()
         logger.debug(f'{repr(like)} was marked')
 
