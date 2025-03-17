@@ -25,7 +25,7 @@ class Solution:
 
     def get_statistic_info(self):
         like_from = 0
-        like_to = 1
+        like_to = not self.voted
         return self.user_id, self.user_name, like_from, like_to
 
     def __str__(self):
