@@ -10,7 +10,9 @@ logger = get_logger('liker_main')
 start_time = perf_counter()
 total_liked = total_already_liked = total_processed_solutions = 0
 
-with MyBrowser() as browser:
+show_browser = False
+
+with MyBrowser(headless=not show_browser) as browser:
     likes_data = process_likes(browser)     # собираем лайки
 
     for i, (solution_url, like_data) in enumerate(likes_data.items(), 1):
