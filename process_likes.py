@@ -33,7 +33,7 @@ def process_likes(browser: MyBrowser):
         logger.warning('Нет лайков, или количество не прогрузилось')
         n_events = '0'
 
-    logger.info('Number of events: {}'.format(n_events))
+    logger.debug('Number of events: {}'.format(n_events))
 
     # прокручиваем страницу вниз
     scroll_down(browser, n=n_events, logger=logger)
@@ -60,6 +60,7 @@ def process_likes(browser: MyBrowser):
             like.mark_read()    # если не подходит для обработки - помечаем прочитанным
         stat.set_stat(like)  # статистика
     stat.dump_data()
+    logger.info('Total number of links to process: {}'.format(len(likes_data)))
     return likes_data
 
 
