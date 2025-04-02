@@ -46,21 +46,26 @@ def process_solution(browser: MyBrowser, solution_url: str, ids_list: list[str]|
     if len(comments_sols) == 2:
         comments, sols = comments_sols
         n_sols = sols.get_attribute('data-value')    # количество решений
-    logger.debug(f'Общее количество решений: {n_sols}')
+    # logger.debug(f'Общее количество решений: {n_sols}')
+    page_title = browser.execute_script("return document.title;")
+    logger.info(f'{page_title} ({solution_url}). Всего решений {n_sols}')
+
     scroll_down(browser, n_sols, logger)
     sleep(random.uniform(1, 3))
 
     raw_solutions = browser.find_elements(By.CLASS_NAME, 'comment-widget')  # собираем все решения на странице
 
-    liked = already_liked = 0
+    liked = already_liked = lucky_liked = 0
     for i, raw_sol in enumerate(raw_solutions, 1):
         if not i % 20:
             logger.debug(f'Обработка решения {i} из {len(raw_solutions)}')
         solution = Solution(raw_sol)
+        is_lucky_solution = random.random() >= .98
         if solution.user_id == STEPIK_SELF_ID or solution.voted:   # если собственное или уже лайкали - пропускаем
             already_liked += solution.voted
-        elif solution.user_id in friends_data or solution.user_id in ids_list:
+        elif (exp:=solution.user_id in friends_data or solution.user_id in ids_list) or is_lucky_solution:
             liked += 1
+            lucky_liked += is_lucky_solution and not exp
             browser.execute_script("arguments[0].scrollIntoView(true);", solution.sol)
             sleep(random.uniform(.5, 1))
             solution.like()
@@ -70,10 +75,11 @@ def process_solution(browser: MyBrowser, solution_url: str, ids_list: list[str]|
 
     stat.dump_data()
 
-    page_title = browser.execute_script("return document.title;")
-    solution_count = len(raw_solutions)
-    logger.info(f'{page_title} ({solution_url}). Всего решений {solution_count}')
-    logger.info(f'новых лайков: {liked}, старых лайков: {already_liked}')
+    # page_title = browser.execute_script("return document.title;")
+    # solution_count = len(raw_solutions)
+    # logger.info(f'{page_title} ({solution_url}). Всего решений {solution_count}')
+    logger.info(f'новых лайков: {liked} (из них "счастливых": {lucky_liked}), '
+                f'старых лайков: {already_liked}, обработано {len(raw_solutions)} решений')
 
     browser.switch_to.window(browser.window_handles[0])     # switch to main tab
 
@@ -88,7 +94,10 @@ def process_solution(browser: MyBrowser, solution_url: str, ids_list: list[str]|
 
 if __name__ == '__main__':
     url = 'https://stepik.org/lesson/361657/step/3?thread=solutions'
-    list_stepik_ids = []        # список айди, которые будут облайканы (помимо списка друзей)
-    browser = MyBrowser()
-    process_solution(browser, url, list_stepik_ids)
+    url = 'https://stepik.org/lesson/701991/step/9?thread=solutions'
+    url = 'https://stepik.org/lesson/1534230/step/14?thread=solutions'
+    list_stepik_ids = [] # ['759436244']        # список айди, которые будут облайканы (помимо списка друзей)
+    show_browser = True
+    with MyBrowser(headless=not show_browser) as browser:
+        process_solution(browser, url, list_stepik_ids)
 
