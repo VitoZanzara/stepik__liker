@@ -19,17 +19,19 @@ logger = get_logger('class_browser')
 class MyFirefoxBrowser(webdriver.Firefox):
     __instance = None
 
+    firefox_path = 'firefox_portable/firefox.exe'
     options = FirefoxOptions()
-    options.add_argument('-headless')       # отключить показ браузера
-    firefox_path = 'firefox_portable/firefox.exe'   # убрать для использования установленной версии
-    options.binary_location = firefox_path          # убрать для использования установленной версии
+    # options.add_argument('-headless')       # отключить показ браузера
+    options.binary_location = firefox_path
 
     def __new__(cls, *args, **kwargs):
         if not cls.__instance:
             cls.__instance = super().__new__(cls)
         return cls.__instance
 
-    def __init__(self, timeout=30):
+    def __init__(self, headless=False, timeout=30):
+        if headless:
+            self.options.add_argument('--headless')
         super().__init__(options=self.options)
         self.waiter = WebDriverWait(self, timeout)
         self.friends_data = load_friends_data()
@@ -66,10 +68,10 @@ class MyChromeBrowser(webdriver.Chrome):
     __instance = None
 
     options = ChromeOptions()
-    options.binary_location = "chrome_portable/chrome.exe"      # убрать для использования системной версии
+    options.binary_location = "chrome_portable/chrome.exe"
     # you may need some other options
     options.add_argument('--disable-site-isolation-trials')
-    options.add_argument('--headless')    # отключить показ браузера
+    # options.add_argument('--headless')    # отключить показ браузера
 
     # options.add_argument('--no-sandbox')
     # options.add_argument('--no-default-browser-check')
@@ -83,7 +85,9 @@ class MyChromeBrowser(webdriver.Chrome):
             cls.__instance = super().__new__(cls)
         return cls.__instance
 
-    def __init__(self, timeout=30):
+    def __init__(self, headless=False, timeout=30):
+        if headless:
+            self.options.add_argument('--headless')
         super().__init__(options=self.options)
         self.waiter = WebDriverWait(self, timeout)
         self.friends_data = load_friends_data()
